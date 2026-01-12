@@ -4,9 +4,4 @@ pydantic>=2.5
 bcrypt>=4.0
 requests>=2.31
 # Optional (only if you use Qdrant):
-llama-index
-llama-index-llms-ollama
-llama-index-embeddings-huggingface
-llama-index-vector-stores-qdrant
-qdrant-client
-sentence-transformers
+# qdrant-client>=1.9

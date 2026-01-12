@@ -3,5 +3,10 @@ uvicorn[standard]>=0.27
 pydantic>=2.5
 bcrypt>=4.0
 requests>=2.31
-# Optional (only if you use Qdrant):
-# qdrant-client>=1.9
+# for backend
+llama-index
+llama-index-llms-ollama
+llama-index-embeddings-huggingface
+llama-index-vector-stores-qdrant
+qdrant-client
+sentence-transformers

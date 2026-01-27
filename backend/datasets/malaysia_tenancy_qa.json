@@ -1,0 +1,62 @@
+[
+  {
+    "title": "Malaysia Tenancy Law - Primary Laws",
+    "content": "Tenancy in Malaysia is primarily governed by a patchwork of laws, including the Contracts Act 1950, the Civil Law Act 1956, the Distress Act 1951, the Specific Relief Act 1950, the National Land Code 1965, and Common Law/Case Law. There is no specific, comprehensive landlord and tenant law in Malaysia at present.",
+    "tags": "legal,malaysia,tenancy_act"
+  },
+  {
+    "title": "Malaysia Tenancy Law - Residential Tenancy Act Status",
+    "content": "Currently, there is no specific Residential Tenancy Act in Malaysia. However, a Residential Tenancy Act has been proposed and is in the drafting stages to safeguard the rights and interests of both landlords and tenants.",
+    "tags": "legal,malaysia,new_laws"
+  },
+  {
+    "title": "Tenancy vs Lease in Malaysia",
+    "content": "In Malaysia, a 'tenancy' generally refers to a short-term agreement for a duration not exceeding three years. A 'lease' is for a period longer than three years and requires registration under the National Land Code.",
+    "tags": "legal,definitions,lease,tenancy"
+  },
+  {
+    "title": "Written Tenancy Agreements",
+    "content": "While a tenancy agreement can be oral or in writing, detailed written contracts are encouraged. For tenancies not exceeding three years, a written agreement is not legally mandatory but is highly recommended.",
+    "tags": "legal,agreement,contract"
+  },
+  {
+    "title": "Stamping Tenancy Agreements",
+    "content": "Stamping the tenancy agreement is mandatory under the Stamp Act 1949. It must be stamped within 30 days of execution. Failure to stamp renders the agreement inadmissible as evidence in court until stamped.",
+    "tags": "legal,stamping,compliance"
+  },
+  {
+    "title": "Eviction Rules",
+    "content": "The Specific Relief Act 1950 prohibits landlords from evicting tenants or locking them out without a court order. Landlords must follow proper legal procedures for eviction.",
+    "tags": "legal,eviction,landlord_rights"
+  },
+  {
+    "title": "Rent Increases",
+    "content": "A landlord generally cannot unilaterally increase rent during a fixed-term tenancy unless the agreement expressly allows it. Unilateral increases during a fixed term constitute a breach of contract.",
+    "tags": "rent,contract,landlord_rights"
+  },
+  {
+    "title": "Tenant Rights Overview",
+    "content": "Tenant rights include the right to a habitable dwelling, privacy, quiet enjoyment, a written lease (if agreed), and return of the security deposit within a reasonable time (minus valid deductions). Tenants can also sue for illegal eviction.",
+    "tags": "tenant_rights,legal"
+  },
+  {
+    "title": "Landlord Rights & Obligations",
+    "content": "Landlords must pay property taxes (quit rent/assessment) and maintain major infrastructure. They have the right to receive timely rent and seek eviction for breach of contract, but cannot enter without permission/valid reason.",
+    "tags": "landlord_rights,legal,maintenance"
+  },
+  {
+    "title": "Security Deposits",
+    "content": "Tenants typically pay 2-3 months' gross rental as security deposit and 0.5 month's rent as utility deposit. Deductions can be made for unpaid rent or damages beyond fair wear and tear.",
+    "tags": "finance,deposit,rent"
+  },
+  {
+    "title": "Early Termination",
+    "content": "Early termination depends on the agreement terms. Tenants terminating early may be liable for the remaining rent. Landlords generally cannot terminate early without a court order unless the agreement allows it.",
+    "tags": "termination,contract,legal"
+  },
+  {
+    "title": "Rent Control Status",
+    "content": "Rent control was abolished in Malaysia with the Control of Rent (Repeal) Act of 1997 (effective 2000). Rents are freely negotiated.",
+    "tags": "history,rent_control,legal"
+  }
+]

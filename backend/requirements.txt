@@ -1,0 +1,13 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.5
+email-validator>=2.0
+bcrypt>=4.0
+requests>=2.31
+# Optional (only if you use Qdrant):
+qdrant-client>=1.9
+llama-index
+llama-index-llms-ollama
+llama-index-vector-stores-qdrant
+llama-index-embeddings-huggingface
+python-multipart

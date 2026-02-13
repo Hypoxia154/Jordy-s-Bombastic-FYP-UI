@@ -38,6 +38,6 @@ df = pd.DataFrame(users)
 if not df.empty and "role" in df.columns:
     df["role"] = df["role"].astype(str).str.upper()
 
-st.dataframe(df, use_container_width=True, hide_index=True)
+st.dataframe(df, width="stretch", hide_index=True)
 
 render_user_metrics(users)

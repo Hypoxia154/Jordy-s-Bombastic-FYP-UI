@@ -7,9 +7,9 @@ class Settings(BaseModel):
     cors_allow_origins: list[str] = os.getenv("CORS_ALLOW_ORIGINS", "*").split(",")
 
     # AI Configuration
-    LLM_MODEL: str = "phi3:mini"
+    LLM_MODEL: str = "my-real-estate-bot"
     EMBEDDING_MODEL: str = "BAAI/bge-small-en-v1.5"
-    RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    RERANKER_MODEL: str = "BAAI/bge-reranker-base"
 
     # Database
     QDRANT_URL: str = os.getenv("QDRANT_URL", "http://localhost:6333")

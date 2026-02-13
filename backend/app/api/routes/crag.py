@@ -64,3 +64,16 @@ def ingest_document(file: UploadFile = File(...), current=Depends(get_current_us
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/documents")
+def list_documents(current=Depends(get_current_user), _=Depends(check_permission)):
+    service = CRAGService()
+    return {"files": service.list_documents()}
+
+@router.delete("/documents/{filename}")
+def delete_document(filename: str, current=Depends(get_current_user), _=Depends(check_permission)):
+    service = CRAGService()
+    success = service.delete_document(filename)
+    if not success:
+        raise HTTPException(status_code=404, detail="File not found or deletion failed.")
+    return {"message": f"Deleted {filename}"}

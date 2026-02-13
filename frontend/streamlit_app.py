@@ -63,6 +63,7 @@ chat_page = st.Page("pages/1_Chat.py", title="Chat", icon=":material/chat:")
 view_users_page = st.Page("pages/2_View_Users.py", title="View Users", icon=":material/group:")
 register_page = st.Page("pages/3_Register_User.py", title="Register User", icon=":material/person_add:")
 manage_page = st.Page("pages/4_Manage_Users.py", title="Manage Users", icon=":material/manage_accounts:")
+admin_docs_page = st.Page("pages/5_Admin_Docs.py", title="Admin Docs", icon=":material/folder_managed:")
 
 # Build navigation based on role
 pages = {}
@@ -72,14 +73,15 @@ if role == "staff":
     pages["Chat"] = [chat_page]
 
 elif role == "admin":
-    # Admin: Chat + User Management (view/register only)
+    # Admin: Chat + User Management + Docs
     pages["Chat"] = [chat_page]
     pages["User Management"] = [view_users_page, register_page]
+    pages["Knowledge Base"] = [admin_docs_page]
 
 elif role == "master":
-    # Master: User Management only (all 3 pages) - NO CHAT
-    # Note: Logic ensures master lands on View Users as it's the first page
+    # Master: User Management + Docs (No Chat per original logic)
     pages["User Management"] = [view_users_page, register_page, manage_page]
+    pages["Knowledge Base"] = [admin_docs_page]
 
 else:
     # Unknown role - default to chat
@@ -111,7 +113,7 @@ with st.sidebar:
     st.divider()
 
     # 3. Logout
-    if st.button("Logout", icon=":material/logout:", use_container_width=True):
+    if st.button("Logout", icon=":material/logout:", width="stretch"):
         import time
         with st.spinner("Logging out..."):
             time.sleep(1.0)

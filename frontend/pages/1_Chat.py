@@ -38,16 +38,16 @@ st.caption("Ask about tenancy agreements, policies, and real estate procedures."
 # -----------------------------
 with st.sidebar:
     # History Section
-    with st.expander("📜 History", expanded=False):
+    with st.expander("History", expanded=False, icon=":material/history:"):
         # Action Buttons Row
         c1, c2 = st.columns(2)
-        if c1.button("New", help="Start a fresh chat", use_container_width=True):
+        if c1.button("New", help="Start a fresh chat", width="stretch"):
             import time
             with st.spinner("Starting new session..."):
                 time.sleep(0.6)
             st.session_state["active_session_id"] = None
             st.rerun()
-        if c2.button("Clear", help="Delete all history", use_container_width=True):
+        if c2.button("Clear", help="Delete all history", width="stretch"):
             import time
             with st.spinner("Clearing history..."):
                 time.sleep(0.8)
@@ -74,16 +74,16 @@ with st.sidebar:
                 d = (s.created_at or "").split("T")[0]
                 label = f"{t} ({d})"
                 
-                if st.button(label, key=f"sess_{s.id}", use_container_width=True):
+                if st.button(label, key=f"sess_{s.id}", width="stretch", type="secondary"):
                     st.session_state["active_session_id"] = s.id
                     st.rerun()
 
     # Upload Section
-    with st.expander("📂 Knowledge Base", expanded=True):
+    with st.expander("Knowledge Base", expanded=True, icon=":material/folder_open:"):
         st.caption("Upload documents to context.")
         uploaded = st.file_uploader("Upload PDF/TXT", type=["pdf", "txt"], label_visibility="collapsed")
         if uploaded is not None:
-             if st.button("📥 Ingest File", use_container_width=True):
+             if st.button("📥 Ingest File", width="stretch"):
                 with st.spinner("Ingesting..."):
                     try:
                         msg = vm.ingest_document(uploaded)
@@ -119,11 +119,10 @@ if not messages:
             <div style="
                 display:flex; gap:1rem; justify-content:center; margin-top:2rem; flex-wrap:wrap;
             ">
-                <div style="background:rgba(30,41,59,0.5);padding:1rem;border-radius:8px;border:1px solid rgba(255,255,255,0.1);max-width:200px;">
-                    📝 <strong>Summarize</strong><br><span style="font-size:0.8rem">Upload a PDF and ask for a summary.</span>
-                </div>
-                <div style="background:rgba(30,41,59,0.5);padding:1rem;border-radius:8px;border:1px solid rgba(255,255,255,0.1);max-width:200px;">
-                     📊 <strong>Visualize</strong><br><span style="font-size:0.8rem">Ask for charts on market trends.</span>
+                <div style="background:rgba(30,41,59,0.5);padding:1.5rem;border-radius:12px;border:1px solid rgba(255,255,255,0.1);max-width:220px;display:flex;flex-direction:column;align-items:center;gap:0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
+                    <strong style="color:#e2e8f0;">Summarize</strong>
+                    <span style="font-size:0.8rem;color:#9ca3af;">Upload a PDF and ask for a summary.</span>
                 </div>
             </div>
         </div>
@@ -139,53 +138,32 @@ for i, m in enumerate(messages):
         m.sources,
         m.confidence,
     )
-    if m.chart_data:
-        # If the message has chart data, render it nicely
-        st.caption(f"📊 {m.chart_data.get('title', 'Data Visualization')}")
-        
-        c_type = m.chart_data.get("type", "bar")
-        data_payload = m.chart_data.get("data", {})
-        
-        # Simple rendering wrapper (MVP) - mapping to Streamlit native charts
-        # Note: Ideally we'd parse 'labels' and 'datasets' into a pd.DataFrame
-        # For this demo, let's assume simple {label: value} dict or reformat
-        try:
-             import pandas as pd
-             # Flatten the structure for simple bar chart
-             # Expected from generic JSON: data: { labels: [A, B], datasets: [{data: [10, 20]}] }
-             labels = data_payload.get("labels", [])
-             dataset = data_payload.get("datasets", [{}])[0]
-             values = dataset.get("data", [])
-             
-             if labels and values:
-                 df = pd.DataFrame({"Category": labels, "Value": values})
-                 st.bar_chart(df.set_index("Category"))
-             else:
-                 st.json(m.chart_data) # Fallback if structure mismatches
-        except Exception:
-             st.json(m.chart_data)
+
 
     # Hybrid Approach: "Visualize This" Button
     # Only show for assistant messages that DON'T already have a chart
-    if m.role == "assistant" and not m.chart_data:
-        # Use a unique key based on message index or ID to prevent conflicts
-        if st.button("📊 Visualize this data", key=f"viz_{i}"):
-            # Trigger a new query asking to visualize exactly this text
-            with st.spinner("Generating chart..."):
-                 viz_query = f"Create a chart visualizing this data: {m.content}"
-                 try:
-                     resp = vm.query(viz_query, active_session_id)
-                     # Force reload to show new message
-                     st.session_state["active_session_id"] = resp.session_id or active_session_id
-                     st.rerun()
-                 except Exception as e:
-                     st.error(f"Failed to generate chart: {e}")
+    # if m.role == "assistant" and not m.chart_data:
+    #     # Use a unique key based on message index or ID to prevent conflicts
+    #     if st.button("📊 Visualize this data", key=f"viz_{i}"):
+    #         # Trigger a new query asking to visualize exactly this text
+    #         with st.spinner("Generating chart..."):
+    #              viz_query = f"Create a chart visualizing this data: {m.content}"
+    #              try:
+    #                  resp = vm.query(viz_query, active_session_id)
+    #                  # Force reload to show new message
+    #                  st.session_state["active_session_id"] = resp.session_id or active_session_id
+    #                  st.rerun()
+    #              except Exception as e:
+    #                  st.error(f"Failed to generate chart: {e}")
 
 # -----------------------------
 # Chat input (onPress)
 # -----------------------------
 question = st.chat_input("Ask about tenancy agreements, policies, real estate procedures...")
 if question:
+    # Optimistic UI: Render user message immediately
+    chat_bubble("user", question)
+
     with st.spinner("CRAG is retrieving relevant knowledge..."):
         try:
             resp = vm.query(question, active_session_id)

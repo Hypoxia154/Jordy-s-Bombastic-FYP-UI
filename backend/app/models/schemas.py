@@ -78,4 +78,4 @@ class QueryResponse(BaseModel):
     answer: str
     sources: list[str]
     confidence: float
-    chart_data: Dict[str, Any] | None = None
+    chart_data: list[Dict[str, Any]] | None = None

@@ -91,7 +91,8 @@ with col2:
         state = vm.login((username or "").strip(), password or "")
 
         if state.ok:
-            set_flash("success", f"Welcome back, {state.user.username}!")
+            username = state.user.get("username", "User") if isinstance(state.user, dict) else "User"
+            set_flash("success", f"Welcome back, {username}!")
             # Visual transition
             import time
             with st.spinner("Authenticating..."):

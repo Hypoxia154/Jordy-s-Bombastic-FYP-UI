@@ -1,8 +1,48 @@
 import streamlit as st
+import pandas as pd
+import plotly.express as px
 
 from mvvm.services.api_client import ApiClient
 from mvvm.viewmodels.chat_vm import ChatViewModel
 from ui.components import chat_bubble
+
+
+VIZ_KEYWORDS = {"visualize", "visualise", "chart", "graph", "plot", "show chart", "make a chart", "make a graph"}
+
+
+def _is_viz_request(text: str) -> bool:
+    t = text.lower()
+    return any(kw in t for kw in VIZ_KEYWORDS)
+
+
+def _render_chart(chart_data: list, caption: str = "📊 Chart"):
+    """Renders a Plotly chart from a list of {label, value, chart_type} dicts."""
+    try:
+        df = pd.DataFrame(chart_data)
+        if df.empty or "label" not in df.columns or "value" not in df.columns:
+            return
+        chart_type = df["chart_type"].iloc[0] if "chart_type" in df.columns else "bar"
+        st.caption(caption)
+        if chart_type == "pie":
+            fig = px.pie(df, names="label", values="value",
+                         color_discrete_sequence=px.colors.sequential.Blues_r)
+        elif chart_type == "line":
+            fig = px.line(df, x="label", y="value", markers=True,
+                          color_discrete_sequence=["#3b82f6"])
+        else:
+            fig = px.bar(df, x="label", y="value", color="value",
+                         color_continuous_scale="Blues", text_auto=True)
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font_color="#e2e8f0", margin=dict(l=20, r=20, t=30, b=20),
+            coloraxis_showscale=False,
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        with st.expander("📋 View Raw Data"):
+            st.dataframe(df[["label", "value"]], use_container_width=True)
+    except Exception as e:
+        st.error(f"Could not render chart: {e}")
+
 
 # -----------------------------
 # Auth guard
@@ -139,35 +179,68 @@ for i, m in enumerate(messages):
         m.confidence,
     )
 
+    if m.chart_data:
+        _render_chart(m.chart_data, "📊 Visualized Data:")
 
-    # Hybrid Approach: "Visualize This" Button
-    # Only show for assistant messages that DON'T already have a chart
-    # if m.role == "assistant" and not m.chart_data:
-    #     # Use a unique key based on message index or ID to prevent conflicts
-    #     if st.button("📊 Visualize this data", key=f"viz_{i}"):
-    #         # Trigger a new query asking to visualize exactly this text
-    #         with st.spinner("Generating chart..."):
-    #              viz_query = f"Create a chart visualizing this data: {m.content}"
-    #              try:
-    #                  resp = vm.query(viz_query, active_session_id)
-    #                  # Force reload to show new message
-    #                  st.session_state["active_session_id"] = resp.session_id or active_session_id
-    #                  st.rerun()
-    #              except Exception as e:
-    #                  st.error(f"Failed to generate chart: {e}")
+    # Render inline chart triggered by 'visualize this' text prompt
+    inline_key = f"viz_inline_{i}"
+    if st.session_state.get(inline_key) and not m.chart_data:
+        _render_chart(st.session_state[inline_key], "📊 Visualized Data")
+
+
 
 # -----------------------------
 # Chat input (onPress)
 # -----------------------------
-question = st.chat_input("Ask about tenancy agreements, policies, real estate procedures...")
+question = st.chat_input("Ask a question, or type 'visualize this' to chart the last response...")
 if question:
-    # Optimistic UI: Render user message immediately
-    chat_bubble("user", question)
+    # Clear any lingering inline charts from previous visualize requests
+    for key in list(st.session_state.keys()):
+        if key.startswith("viz_inline_"):
+            del st.session_state[key]
 
-    with st.spinner("CRAG is retrieving relevant knowledge..."):
-        try:
-            resp = vm.query(question, active_session_id)
-            st.session_state["active_session_id"] = resp.session_id or active_session_id
-        except Exception as e:
-            st.error(f"Query failed: {e}")
-    st.rerun()
+    # -- Visualization intent: intercept before CRAG --
+    if _is_viz_request(question) and messages:
+        # Find the last assistant message
+        last_assistant = next(
+            (m for m in reversed(messages) if m.role == "assistant"), None
+        )
+        if last_assistant:
+            chat_bubble("user", question)
+            with st.spinner("Asking Gemini to extract chart data..."):
+                try:
+                    result = api.post(
+                        "/crag/visualize",
+                        {"text": last_assistant.content, "hint": question}
+                    )
+                    chart_data = result.get("chart_data")
+                    if chart_data:
+                        # Store chart against the last assistant message index
+                        last_idx = next(
+                            i for i, m in reversed(list(enumerate(messages)))
+                            if m.role == "assistant"
+                        )
+                        st.session_state[f"viz_inline_{last_idx}"] = chart_data
+                        chat_bubble("assistant", "Here's the chart based on that response:")
+                    else:
+                        chat_bubble("assistant", "⚠️ I couldn't find any numerical data to chart in the last response. Try asking a question that returns specific numbers first (e.g. rent amounts, fees, periods).")
+                except RuntimeError as e:
+                    if "422" in str(e):
+                        chat_bubble("assistant", "⚠️ No chartable numerical data found in the last response. Ask a question with specific numbers first.")
+                    else:
+                        chat_bubble("assistant", f"Chart generation failed: {e}")
+            st.rerun()
+        else:
+            chat_bubble("assistant", "There's no previous response to visualize yet. Ask a question first!")
+            st.rerun()
+
+    else:
+        # -- Normal CRAG flow --
+        chat_bubble("user", question)
+        with st.spinner("CRAG is retrieving relevant knowledge..."):
+            try:
+                resp = vm.query(question, active_session_id)
+                st.session_state["active_session_id"] = resp.session_id or active_session_id
+            except Exception as e:
+                st.error(f"Query failed: {e}")
+        st.rerun()

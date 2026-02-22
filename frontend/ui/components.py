@@ -30,11 +30,11 @@ def sidebar_user_card(user: dict) -> None:
 def chat_bubble(role: str, content: str, sources=None, confidence=None) -> None:
     """
     Renders a modern chat bubble.
-    User = Right aligned, Blue Gradient
-    Assistant = Left aligned, Glass Dark
+    User  = Right-aligned custom HTML bubble.
+    Assistant = st.chat_message() for proper markdown rendering.
     """
     if role == "user":
-        # User Bubble (Right)
+        # User Bubble (Right, custom styled HTML)
         st.markdown(
             f"""<div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
 <div style="max-width: 80%; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); color: white; padding: 0.8rem 1.2rem; border-radius: 16px 16px 2px 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); font-size: 0.95rem; line-height: 1.5;">{content}</div>
@@ -42,36 +42,57 @@ def chat_bubble(role: str, content: str, sources=None, confidence=None) -> None:
             unsafe_allow_html=True,
         )
     else:
-        # Assistant Bubble (Left)
-        # Sources formatting
-        sources_html = ""
-        if sources:
-            sources_html = "<div style='margin-top:0.8rem;padding-top:0.5rem;border-top:1px solid rgba(255,255,255,0.1);font-size:0.8rem;color:#9ca3af;'><strong>Sources:</strong><ul style='margin:0.2rem 0;padding-left:1.2rem;'>"
-            for s in sources:
-                sources_html += f"<li>{s}</li>"
-            sources_html += "</ul></div>"
+        # Inject CSS once to style the native st.chat_message like the glass bubble
+        st.markdown("""
+        <style>
+        /* Glass bubble for assistant messages */
+        [data-testid="stChatMessage"] {
+            background: rgba(30, 41, 59, 0.7) !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            backdrop-filter: blur(8px) !important;
+            border-radius: 2px 16px 16px 16px !important;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15) !important;
+            padding: 0.75rem 1rem !important;
+            margin-bottom: 0.75rem !important;
+        }
+        /* Justify text inside assistant bubble */
+        [data-testid="stChatMessage"] p,
+        [data-testid="stChatMessage"] li {
+            color: #e2e8f0 !important;
+            text-align: justify !important;
+            line-height: 1.65 !important;
+        }
+        [data-testid="stChatMessage"] h1,
+        [data-testid="stChatMessage"] h2,
+        [data-testid="stChatMessage"] h3 {
+            color: #f1f5f9 !important;
+        }
+        [data-testid="stChatMessage"] strong {
+            color: #93c5fd !important;
+        }
+        /* Hide default Streamlit chat avatar background */
+        [data-testid="stChatMessage"] [data-testid="chatAvatarIcon-assistant"] {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+            border-radius: 50% !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
-        # Confidence Badge
-        conf_html = ""
-        if confidence is not None:
-             conf_html = f"<div style='font-size:0.75rem;color:#10b981;margin-top:0.3rem;'>Confidence: {confidence:.2f}</div>"
+        with st.chat_message("assistant", avatar="🤖"):
+            st.markdown(content)  # Full markdown: headers, bullets, bold, tables, code
 
-        st.markdown(
-            f"""<div style="display:flex; justify-content:flex-start; margin-bottom:1rem;">
-<!-- Avatar (Optional) -->
-<div style="min-width:32px; height:32px; border-radius:50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display:flex;align-items:center;justify-content:center; margin-right: 0.75rem; margin-top: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
-</svg>
-</div>
-<div style="max-width: 85%; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); color: #e2e8f0; padding: 1rem 1.25rem; border-radius: 2px 16px 16px 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-<div style="font-size:0.95rem; line-height:1.6;">{content}</div>
-{sources_html}
-{conf_html}
-</div>
-</div>""",
-            unsafe_allow_html=True,
-        )
+            if sources:
+                st.markdown(
+                    "<div style='margin-top:0.6rem;padding-top:0.5rem;border-top:1px solid rgba(255,255,255,0.1);font-size:0.8rem;color:#9ca3af;'>"
+                    "<strong>Sources:</strong><ul style='margin:0.2rem 0;padding-left:1.2rem;'>"
+                    + "".join(f"<li>{s}</li>" for s in sources)
+                    + "</ul></div>",
+                    unsafe_allow_html=True,
+                )
+
+            if confidence is not None:
+                st.caption(f"Confidence: {confidence:.2f}")
+
 
 
 def render_user_metrics(users: list) -> None:

@@ -9,6 +9,7 @@ from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core.postprocessor import SentenceTransformerRerank
 from app.core.config import settings
 from app.services.vector_store import VectorService
+from app.services.chart_service import ChartService
 
 
 class CRAGService:
@@ -19,7 +20,11 @@ class CRAGService:
             model=settings.LLM_MODEL,
             request_timeout=300.0,
             temperature=0.1,
-            additional_kwargs={"num_ctx": 4096, "num_predict": 1024}
+            additional_kwargs={
+                "num_ctx": 4096, 
+                "num_predict": 1024,
+                "stop": ["<|end|>", "<|user|>", "<|assistant|>", "---------------------"]
+            }
         )
         LlamaSettings.llm = self.llm
 
@@ -28,6 +33,9 @@ class CRAGService:
         self.reranker = SentenceTransformerRerank(
             model=settings.RERANKER_MODEL, top_n=5
         )
+
+        # Chart service (external AI API)
+        self.chart_service = ChartService()
 
         # --- PROMPTS ---
 
@@ -39,6 +47,16 @@ class CRAGService:
             "3. GENERAL: (Weather, Jokes, General Knowledge)\n"
             "4. DOMAIN: (Real Estate, Tenancy, Contracts, Rent, Property, Rights, Clauses, Obligations)\n"
             "5. DEPENDENT: (Ambiguous follow-ups)\n"
+            "\n"
+            "Examples:\n"
+            "User: 'Hi there' -> GREETING\n"
+            "User: 'My name is John' -> SESSION\n"
+            "User: 'Tell me a joke' -> GENERAL\n"
+            "User: 'What is the rent?' -> DOMAIN\n"
+            "User: 'How much is it?' -> DEPENDENT\n"
+            "User: 'Help' -> GENERAL\n"
+            "\n"
+            "User Input: {query_str}\n"
             "Answer ONLY with the Category Name."
         )
 
@@ -75,7 +93,13 @@ class CRAGService:
             "Extract and synthesize the relevant information from the context.\n"
             "If the exact answer isn't in the context but related information is present, provide what you found and note what's missing.\n"
             "NEVER make up information. NEVER use knowledge outside the context.\n"
-            "IMPORTANT: Keep responses clear and direct. Answer in the same language as the question.\n"
+            "Structure your response clearly:\n"
+            "- Use ### Headers for main sections.\n"
+            "- Use bullet points for lists, with a blank line between each item.\n"
+            "- Use Markdown tables for comparisons.\n"
+            "- Keep paragraphs short and readable.\n"
+            "- Bold key terms only.\n"
+            "Answer in the same language as the question.\n"
             "---------------------\n"
             "Context:\n"
             "{context_str}\n"
@@ -106,7 +130,8 @@ class CRAGService:
             "intent": category,
             "session_updates": {},
             "infographic": "",
-            "chart_data": None
+            "chart_data": None,
+            "confidence": 1.0 
         }
 
         # STEP 2: HANDLE NON-RETRIEVAL
@@ -171,12 +196,21 @@ class CRAGService:
         # STEP 4: EXECUTE RAG WITH SAFETY
         rag_result = self._run_rag_pipeline(search_query)
 
+        # Corrective Retrieval (Simple Loop)
+        if rag_result.get("low_confidence"):
+            print(" [CRAG] Low confidence. Attempting corrective rewrite...")
+            # Try to simplify or use keywords
+            new_query = self._rewrite_query(search_query, history)
+            if new_query != search_query:
+                 print(f" [CRAG] Retrying with: {new_query}")
+                 rag_result = self._run_rag_pipeline(new_query)
+
         # --- TUNING 3.2: Keep responses concise ---
         final_answer = rag_result["answer"]
         # --- TUNING 3.2: Keep responses succinct but allow detail ---
         final_answer = rag_result["answer"]
-        if len(final_answer) > 2000:
-            final_answer = f"{final_answer[:2000].rstrip()}..."
+        if len(final_answer) > 6000:
+            final_answer = f"{final_answer[:6000].rstrip()}..."
 
         if rag_result.get("low_confidence"):
             final_answer = (
@@ -186,13 +220,48 @@ class CRAGService:
 
 
 
+        if self._looks_domain_related(query):
+            if self.chart_service.enabled:
+                chart_data = self.chart_service.extract_chart_data(final_answer, query)
+            else:
+                chart_data = self._try_extract_chart_data(final_answer, query)
+            if chart_data:
+                result_template["chart_data"] = chart_data
+
         result_template["answer"] = final_answer
         result_template["sources"] = rag_result["sources"]
+        result_template["low_confidence"] = rag_result.get("low_confidence", False)
+        result_template["confidence"] = rag_result.get("confidence_score", 1.0)
 
         # Pass debug info
         result_template["debug_nodes"] = rag_result.get("debug_nodes", [])
 
         return result_template
+
+    def _try_extract_chart_data(self, context: str, query: str) -> Union[List[Dict], None]:
+        """Specifically asks the LLM to format data for a chart if relevant."""
+        if not any(word in query.lower() for word in ["graph", "chart", "visualize", "compare", "trend", "statistics", "data"]):
+            return None
+        
+        prompt = (
+            f"Context: {context}\n"
+            f"Query: {query}\n"
+            "Task: Extract numerical data for a chart.\n"
+            "Constraint: Output ONLY a valid JSON list of objects with 'label' and 'value'.\n"
+            "Example: [{\"label\": \"Rent\", \"value\": 2000}, {\"label\": \"Deposit\", \"value\": 500}]\n"
+            "Do NOT write Python code. Do NOT explain. ONLY JSON."
+        )
+        try:
+            response = self.llm.complete(prompt).text.strip()
+            # Clean response to ensure it's only JSON
+            match = re.search(r'\[.*\]', response, re.DOTALL)
+            if match:
+                data = json.loads(match.group())
+                if isinstance(data, list) and len(data) > 0 and 'label' in data[0] and 'value' in data[0]:
+                    return data
+        except:
+            return None
+        return None
 
     def _normalize_query(self, query: str) -> str:
         """Fixes common grammar issues for better retrieval"""
@@ -313,15 +382,16 @@ class CRAGService:
             "answer": str(response_obj),
             "sources": source_list[:3],
             "debug_nodes": debug_nodes_data,
-            "low_confidence": low_confidence
+            "low_confidence": low_confidence,
+            "confidence_score": best_score # RETURN THE CALCULATED SCORE
         }
 
 
 
     def _rewrite_query(self, query: str, history: List[str]) -> str:
         try:
-            # Use last 3 turns for better context
-            history_str = "\n".join(history[-3:])
+            # Use last 5-7 turns for better context
+            history_str = "\n".join(history[-7:])
 
             prompt = self.multiquery_prompt.format(history_str=history_str, query_str=query)
             response = self.llm.complete(prompt).text.strip()

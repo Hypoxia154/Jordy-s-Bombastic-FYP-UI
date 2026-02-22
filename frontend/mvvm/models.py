@@ -14,11 +14,11 @@ class ChatMessage(BaseModel):
     sources: Optional[List[str]] = None
     confidence: Optional[float] = None
     session_id: Optional[int] = None
-    chart_data: Optional[Dict[str, Any]] = None
+    chart_data: Optional[List[Dict[str, Any]]] = None
 
 class ChatqueryResponse(BaseModel):
     session_id: int
     answer: str
     sources: Optional[List[str]] = None
     confidence: Optional[float] = None
-    chart_data: Optional[Dict[str, Any]] = None
+    chart_data: Optional[List[Dict[str, Any]]] = None

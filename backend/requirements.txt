@@ -13,3 +13,6 @@ llama-index-llms-ollama
 llama-index-vector-stores-qdrant
 llama-index-embeddings-huggingface
 python-multipart
+# OpenAI API (for chart extraction)
+openai>=1.0
+python-dotenv>=1.0

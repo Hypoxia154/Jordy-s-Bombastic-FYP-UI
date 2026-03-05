@@ -80,7 +80,7 @@ with col_chart2:
             x=alt.X('date:T', title='Date', axis=alt.Axis(format='%Y-%m-%d')),
             y=alt.Y('count:Q', title='Requests'),
             color=alt.Color('action:N', scale=alt.Scale(domain=['ALLOWED', 'DENIED'], range=['#2e7d32', '#d32f2f'])),
-            tooltip=['date', 'action', 'count']
+            tooltip=[alt.Tooltip('date:T', title='Date', format='%Y-%m-%d'), alt.Tooltip('action:N', title='Action'), alt.Tooltip('count:Q', title='Requests')]
         ).properties(height=300)
         st.altair_chart(bar_chart, use_container_width=True)
     else:

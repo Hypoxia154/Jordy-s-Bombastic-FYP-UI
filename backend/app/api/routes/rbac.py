@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from app.core.deps import check_permission, get_current_user
+from app.core.deps import check_permission, get_current_user, require_role
 from app.core.security_casbin import enforcer
 from app.db.repositories.rbac import RBACRepository
 
@@ -20,12 +20,15 @@ def get_rbac_metrics():
     repo = RBACRepository()
     return repo.get_metrics()
 
-@router.post("/simulate", dependencies=[Depends(check_permission)])
+@router.post("/simulate")
 def simulate_rbac(payload: SimulationRequest, current_user: dict = Depends(get_current_user)):
     """
     Simulates a Casbin check without making the actual request.
     Records the simulation in the rbac_access_logs to demonstrate the dashboard working.
     """
+    # Only allow managers to run simulations
+    require_role(current_user, {"master", "admin"})
+    
     is_allowed = enforcer.enforce(payload.simulate_role, payload.simulate_endpoint, payload.simulate_method)
     
     # Log it as a real attempt to populate the metrics dashboard

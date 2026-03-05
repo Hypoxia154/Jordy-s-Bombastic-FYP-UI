@@ -11,6 +11,11 @@ def apply_custom_css() -> None:
     st.markdown(
         f"""
         <style>
+        /* Hide 'Press Enter to submit form' hint inside inputs globally */
+        div[data-testid="InputInstructions"] {{
+            display: none !important;
+        }}
+        
         /* Import Font: Inter */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         

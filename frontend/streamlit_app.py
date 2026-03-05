@@ -65,6 +65,7 @@ register_page = st.Page("pages/3_Register_User.py", title="Register User", icon=
 manage_page = st.Page("pages/4_Manage_Users.py", title="Manage Users", icon=":material/manage_accounts:")
 admin_docs_page = st.Page("pages/5_Admin_Docs.py", title="Admin Docs", icon=":material/folder_managed:")
 logs_page = st.Page("pages/6_System_Logs.py", title="System Logs", icon=":material/bug_report:")
+rbac_metrics_page = st.Page("pages/7_RBAC_Metrics.py", title="RBAC Metrics", icon=":material/security:")
 
 # Build navigation based on role
 pages = {}
@@ -80,10 +81,10 @@ elif role == "admin":
     pages["Knowledge Base"] = [admin_docs_page]
 
 elif role == "master":
-    # Master: User Management + Docs (No Chat per original logic)
+    # Master: Managerial Rols
     pages["User Management"] = [view_users_page, register_page, manage_page]
     pages["Knowledge Base"] = [admin_docs_page]
-    pages["System Tools"] = [logs_page]
+    pages["System Tools"] = [logs_page, rbac_metrics_page]
 
 else:
     # Unknown role - default to chat

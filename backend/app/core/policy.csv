@@ -22,6 +22,8 @@ p, master, /admin/logs, GET
 p, master, /admin/logs, DELETE
 p, master, /admin/logs/, GET
 p, master, /admin/logs/, DELETE
+p, master, /admin/rbac/metrics, GET
+p, master, /admin/rbac/metrics/, GET
 p, admin, /users, GET
 p, admin, /users, POST
 p, admin, /chat/sessions, GET
@@ -40,6 +42,8 @@ p, admin, /crag/documents/{filename}, DELETE
 p, admin, /crag/documents/{filename}/access, GET
 p, admin, /crag/documents/{filename}/access, PUT
 p, admin, /crag/document_summary, POST
+p, admin, /admin/rbac/metrics, GET
+p, admin, /admin/rbac/metrics/, GET
 p, staff, /chat/sessions, GET
 p, staff, /chat/sessions, POST
 p, staff, /chat/sessions/{session_id}/messages, GET

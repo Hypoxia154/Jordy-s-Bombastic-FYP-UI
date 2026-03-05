@@ -95,9 +95,27 @@ def ensure_system_logs_table() -> None:
             """
         )
 
+def ensure_rbac_logs_table() -> None:
+    """Creates a table to log all Casbin authorization decisions (Allowed/Denied)."""
+    with db() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS rbac_access_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                username TEXT NOT NULL,
+                role TEXT NOT NULL,
+                endpoint TEXT NOT NULL,
+                method TEXT NOT NULL,
+                action TEXT NOT NULL
+            )
+            """
+        )
+
 def init_db_migrations():
     ensure_session_state_column()
     ensure_doc_text_table()
     ensure_doc_access_table()
     ensure_session_pin_column()
     ensure_system_logs_table()
+    ensure_rbac_logs_table()

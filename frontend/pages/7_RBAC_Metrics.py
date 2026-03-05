@@ -135,6 +135,15 @@ st.write(
     "backend intercepts the request. (Simulations will appear in the charts above after testing)."
 )
 
+# Render flash message from a previous simulation run
+if "sim_flash" in st.session_state:
+    flash = st.session_state.pop("sim_flash")
+    if flash.get("allowed"):
+        st.success(f"✅ **ACCESS GRANTED:** {flash.get('detail')}")
+    else:
+        st.error(f"🚫 **ACCESS DENIED (403):** {flash.get('detail')}")
+
+
 with st.form("rbac_simulator_form"):
     sim_col1, sim_col2, sim_col3 = st.columns(3)
     
@@ -161,13 +170,7 @@ if submitted:
     with st.spinner("Evaluating Casbin Policies..."):
         try:
             result = vm.simulate_rbac(test_role, test_endpoint, test_method)
-            
-            if result.get("allowed"):
-                st.success(f"✅ **ACCESS GRANTED:** {result.get('detail')}")
-            else:
-                st.error(f"🚫 **ACCESS DENIED (403):** {result.get('detail')}")
-                
-            st.info("💡 Notice how the charts and metrics at the top update instantly to reflect this test! (Refresh to see)")
-            
+            st.session_state["sim_flash"] = result
+            st.rerun()
         except Exception as e:
             st.error(f"Simulation failed: {e}")

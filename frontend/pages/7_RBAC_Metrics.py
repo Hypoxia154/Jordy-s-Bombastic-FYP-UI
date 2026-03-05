@@ -13,7 +13,7 @@ if "token" not in st.session_state or not st.session_state.token:
     st.stop()
 
 # Build the ViewModel using the token from session state
-api_url = st.secrets.get("API_URL", "http://127.0.0.0:8000")
+api_url = st.secrets.get("API_URL", "http://127.0.0.1:8000")
 client = ApiClient(api_url, st.session_state.token)
 vm = RBACViewModel(client)
 

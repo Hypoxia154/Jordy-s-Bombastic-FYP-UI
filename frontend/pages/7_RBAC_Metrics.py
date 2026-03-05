@@ -147,7 +147,8 @@ if "sim_flash" in st.session_state:
 
 
 with st.form("rbac_simulator_form"):
-    sim_col1, sim_col2, sim_col3 = st.columns(3)
+    # 4 columns: 3 for inputs, 1 for the button
+    sim_col1, sim_col2, sim_col3, sim_col4 = st.columns([1, 1, 2, 1])
     
     with sim_col1:
         test_role = st.selectbox("Simulate Role", ["staff", "admin", "master"], index=0)
@@ -165,8 +166,9 @@ with st.form("rbac_simulator_form"):
                 "/crag/documents/secret.pdf"
             ]
         )
-    
-    submitted = st.form_submit_button("Test RBAC Engine", type="primary", use_container_width=True)
+    with sim_col4:
+        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        submitted = st.form_submit_button("Test Engine", type="primary", use_container_width=True)
 
 if submitted:
     with st.spinner("Evaluating Casbin Policies..."):

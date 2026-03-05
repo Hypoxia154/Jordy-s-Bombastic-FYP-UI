@@ -52,39 +52,41 @@ col_chart1, col_chart2 = st.columns([1, 1])
 
 # 1. Role Distribution Chart
 with col_chart1:
-    st.markdown("#### API Usage by Role")
-    role_dist = metrics.get("role_distribution", {})
-    if role_dist:
-        # Convert dictionary to DataFrame for charting
-        df_roles = pd.DataFrame(list(role_dist.items()), columns=["Role", "Total Requests"])
-        
-        # We can use Altair for a nice pie/donut chart
-        base = alt.Chart(df_roles).encode(
-            theta=alt.Theta("Total Requests:Q", stack=True),
-            color=alt.Color("Role:N", scale=alt.Scale(scheme='tableau10')),
-            tooltip=["Role", "Total Requests"]
-        )
-        pie = base.mark_arc(innerRadius=50)
-        st.altair_chart(pie, use_container_width=True)
-    else:
-        st.info("No role distribution data available yet.")
+    with st.container(border=True):
+        st.markdown("#### API Usage by Role")
+        role_dist = metrics.get("role_distribution", {})
+        if role_dist:
+            # Convert dictionary to DataFrame for charting
+            df_roles = pd.DataFrame(list(role_dist.items()), columns=["Role", "Total Requests"])
+            
+            # We can use Altair for a nice pie/donut chart
+            base = alt.Chart(df_roles).encode(
+                theta=alt.Theta("Total Requests:Q", stack=True),
+                color=alt.Color("Role:N", scale=alt.Scale(scheme='tableau10'), legend=alt.Legend(orient="bottom", title="Role")),
+                tooltip=["Role", "Total Requests"]
+            )
+            pie = base.mark_arc(innerRadius=50).properties(height=300)
+            st.altair_chart(pie, use_container_width=True)
+        else:
+            st.info("No role distribution data available yet.")
 
 # 2. Daily Trends
 with col_chart2:
-    st.markdown("#### Access Decisions Over Time")
-    trend_data = metrics.get("trend_data", [])
-    if trend_data:
-        df_trends = pd.DataFrame(trend_data)
-        # Create a stacked bar chart mapping Action (Allowed vs Denied) to colors
-        bar_chart = alt.Chart(df_trends).mark_bar().encode(
-            x=alt.X('date:T', title='Date', axis=alt.Axis(format='%Y-%m-%d')),
-            y=alt.Y('count:Q', title='Requests'),
-            color=alt.Color('action:N', scale=alt.Scale(domain=['ALLOWED', 'DENIED'], range=['#2e7d32', '#d32f2f'])),
-            tooltip=[alt.Tooltip('date:T', title='Date', format='%Y-%m-%d'), alt.Tooltip('action:N', title='Action'), alt.Tooltip('count:Q', title='Requests')]
-        ).properties(height=300)
-        st.altair_chart(bar_chart, use_container_width=True)
-    else:
-        st.info("No trend data available yet.")
+    with st.container(border=True):
+        st.markdown("#### Access Decisions Over Time")
+        trend_data = metrics.get("trend_data", [])
+        if trend_data:
+            df_trends = pd.DataFrame(trend_data)
+            # Create a stacked bar chart mapping Action (Allowed vs Denied) to colors
+            bar_chart = alt.Chart(df_trends).mark_bar().encode(
+                x=alt.X('date:T', title='Date', axis=alt.Axis(format='%Y-%m-%d')),
+                y=alt.Y('count:Q', title='Requests'),
+                color=alt.Color('action:N', scale=alt.Scale(domain=['ALLOWED', 'DENIED'], range=['#2e7d32', '#d32f2f']), legend=alt.Legend(orient="bottom", title="Decision")),
+                tooltip=[alt.Tooltip('date:T', title='Date', format='%Y-%m-%d'), alt.Tooltip('action:N', title='Action'), alt.Tooltip('count:Q', title='Requests')]
+            ).properties(height=300)
+            st.altair_chart(bar_chart, use_container_width=True)
+        else:
+            st.info("No trend data available yet.")
 
 st.divider()
 

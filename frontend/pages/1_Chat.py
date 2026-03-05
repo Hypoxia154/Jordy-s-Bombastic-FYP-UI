@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import altair as alt
 
 from mvvm.services.api_client import ApiClient
 from mvvm.viewmodels.chat_vm import ChatViewModel
@@ -28,28 +28,38 @@ def _is_viz_request(text: str) -> bool:
 
 
 def _render_chart(chart_data: list, caption: str = "📊 Chart"):
-    """Renders a Plotly chart from a list of {label, value, chart_type} dicts."""
+    """Renders an Altair chart from a list of {label, value, chart_type} dicts."""
     try:
         df = pd.DataFrame(chart_data)
         if df.empty or "label" not in df.columns or "value" not in df.columns:
             return
         chart_type = df["chart_type"].iloc[0] if "chart_type" in df.columns else "bar"
         st.caption(caption)
+        
         if chart_type == "pie":
-            fig = px.pie(df, names="label", values="value",
-                         color_discrete_sequence=px.colors.sequential.Blues_r)
+            chart = alt.Chart(df).encode(
+                theta=alt.Theta("value:Q", stack=True),
+                color=alt.Color("label:N", scale=alt.Scale(scheme='blues')),
+                tooltip=["label", "value"]
+            ).mark_arc(innerRadius=0)
         elif chart_type == "line":
-            fig = px.line(df, x="label", y="value", markers=True,
-                          color_discrete_sequence=["#3b82f6"])
+            chart = alt.Chart(df).mark_line(point=True).encode(
+                x=alt.X('label:N', title='Label', sort=None),
+                y=alt.Y('value:Q', title='Value'),
+                tooltip=["label", "value"],
+                color=alt.value("#3b82f6")
+            )
         else:
-            fig = px.bar(df, x="label", y="value", color="value",
-                         color_continuous_scale="Blues", text_auto=True)
-        fig.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#e2e8f0", margin=dict(l=20, r=20, t=30, b=20),
-            coloraxis_showscale=False,
-        )
-        st.plotly_chart(fig, use_container_width=True)
+            chart = alt.Chart(df).mark_bar().encode(
+                x=alt.X('label:N', title='Label', sort=None),
+                y=alt.Y('value:Q', title='Value'),
+                color=alt.Color('value:Q', scale=alt.Scale(scheme='blues'), legend=None),
+                tooltip=["label", "value"]
+            )
+            
+        # Common layout configurations
+        chart = chart.properties(height=350).configure_view(strokeWidth=0)
+        st.altair_chart(chart, use_container_width=True)
         with st.expander("📋 View Raw Data"):
             st.dataframe(df[["label", "value"]], use_container_width=True)
     except Exception as e:
@@ -394,7 +404,7 @@ if question:
         )
         if last_assistant:
             chat_bubble("user", question)
-            with st.spinner("Asking Gemini to extract chart data..."):
+            with st.spinner("Extracting chart data..."):
                 try:
                     result = api.post(
                         "/crag/visualize",

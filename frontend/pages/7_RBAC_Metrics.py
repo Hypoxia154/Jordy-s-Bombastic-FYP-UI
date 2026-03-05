@@ -116,4 +116,58 @@ if recent_denials:
     styled_df = df_denials.style.map(color_method, subset=['HTTP Method'])
     st.dataframe(styled_df, use_container_width=True, hide_index=True)
 else:
-    st.success("No unauthorized access attempts recently! The perimeter is secure.")
+    st.info(
+        "**0 Denials is a feature, not a bug!** 🛡️\n\n"
+        "Our frontend UI proactively hides unauthorized buttons and routes from users before they can even try to click them. "
+        "This is called **Defense-in-Depth**. \n\n"
+        "However, if a malicious actor bypassed the frontend and tried to hit the API directly using Postman or a script, "
+        "Casbin would catch it. You can prove this using the simulator below."
+    )
+
+st.divider()
+
+# ---------------------------------------------------------
+# Interactive "What-If" Simulator
+# ---------------------------------------------------------
+st.markdown("### 🧪 Interactive 'What-If' Simulator")
+st.write(
+    "Test the Casbin authorization engine live. Select a role and an endpoint to see if the "
+    "backend intercepts the request. (Simulations will appear in the charts above after testing)."
+)
+
+with st.form("rbac_simulator_form"):
+    sim_col1, sim_col2, sim_col3 = st.columns(3)
+    
+    with sim_col1:
+        test_role = st.selectbox("Simulate Role", ["staff", "admin", "master"], index=0)
+    with sim_col2:
+        test_method = st.selectbox("HTTP Method", ["GET", "POST", "PUT", "DELETE"], index=3)
+    with sim_col3:
+        # Provide common endpoints as suggestions, but allow typing
+        test_endpoint = st.selectbox(
+            "API Endpoint", 
+            [
+                "/admin/logs", 
+                "/admin/rbac/metrics", 
+                "/users", 
+                "/chat/sessions",
+                "/crag/documents/secret.pdf"
+            ]
+        )
+    
+    submitted = st.form_submit_button("Test RBAC Engine", type="primary", use_container_width=True)
+
+if submitted:
+    with st.spinner("Evaluating Casbin Policies..."):
+        try:
+            result = vm.simulate_rbac(test_role, test_endpoint, test_method)
+            
+            if result.get("allowed"):
+                st.success(f"✅ **ACCESS GRANTED:** {result.get('detail')}")
+            else:
+                st.error(f"🚫 **ACCESS DENIED (403):** {result.get('detail')}")
+                
+            st.info("💡 Notice how the charts and metrics at the top update instantly to reflect this test! (Refresh to see)")
+            
+        except Exception as e:
+            st.error(f"Simulation failed: {e}")

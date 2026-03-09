@@ -82,6 +82,7 @@ elif role == "admin":
 
 elif role == "master":
     # Master: Managerial Rols
+    pages["Chat"] = [chat_page]
     pages["User Management"] = [view_users_page, register_page, manage_page]
     pages["Knowledge Base"] = [admin_docs_page]
     pages["System Tools"] = [logs_page, rbac_metrics_page]

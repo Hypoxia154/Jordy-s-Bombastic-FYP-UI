@@ -134,7 +134,8 @@ class CRAGService:
 
             "- Do NOT output section headers like Answer, Evidence, or Missing.\n\n"
 
-            "STYLE:\n"
+            "STYLE:\n"
+
             "- 120–170 words max.\n"
             "- Bullets only (no paragraphs).\n\n"
             "---------------------\n"
@@ -205,7 +206,7 @@ class CRAGService:
     # ---------------------
     # Streaming plan builder (used by crag.py)
     # ---------------------
-    def build_rag_plan(self, query: str, history: list[str], session_state: dict | None = None, file_filter: str | None = None) -> dict:
+    def build_rag_plan(self, query: str, history: list[str], session_state: dict | None = None, file_filter: str | None = None, accessible_files: list[str] | None = None) -> dict:
         q = (query or "").strip()
         session_state = session_state or {}
 
@@ -264,7 +265,7 @@ class CRAGService:
                 return {"intent": "DEPENDENT", "prompt": prompt, "sources": [], "confidence": 0.4, "chart_data": None}
 
         # 4) DOMAIN retrieval-only
-        ctx = self._retrieve_context(search_query, file_filter=file_filter)
+        ctx = self._retrieve_context(search_query, file_filter=file_filter, accessible_files=accessible_files)
 
         # Very low confidence -> ask clarification
         if ctx.get("very_low_confidence"):
@@ -310,11 +311,20 @@ class CRAGService:
     # ---------------------
     # Retrieval / RAG
     # ---------------------
-    def _retrieve_context(self, search_query: str, file_filter: str | None = None) -> dict:
+    def _retrieve_context(self, search_query: str, file_filter: str | None = None, accessible_files: list[str] | None = None) -> dict:
         from llama_index.core.vector_stores import MetadataFilters, ExactMatchFilter
+        from llama_index.core.vector_stores.types import FilterOperator, MetadataFilter
 
+        filters_list = []
         if file_filter:
-            filters = MetadataFilters(filters=[ExactMatchFilter(key="file_name", value=file_filter)])
+            filters_list.append(ExactMatchFilter(key="file_name", value=file_filter))
+        elif accessible_files is not None:
+            # If no single file filter but we have access control, only allow accessible files
+            # Note: exact structure depends on vector store, but usually we iterate ExactMatch or use an InFilter 
+            filters_list.append(MetadataFilter(key="file_name", operator=FilterOperator.IN, value=accessible_files))
+
+        if filters_list:
+            filters = MetadataFilters(filters=filters_list)
             retriever = VectorIndexRetriever(index=self.index, similarity_top_k=20, filters=filters)
         else:
             retriever = VectorIndexRetriever(index=self.index, similarity_top_k=20)

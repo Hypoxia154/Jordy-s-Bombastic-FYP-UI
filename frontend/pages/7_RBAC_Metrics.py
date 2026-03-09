@@ -5,7 +5,7 @@ import altair as alt
 from mvvm.services.api_client import ApiClient
 from mvvm.viewmodels.rbac_vm import RBACViewModel
 
-st.title("🛡️ RBAC Access Metrics")
+st.title("RBAC Access Metrics")
 st.write("Real-time telemetry of Casbin Role-Based Access Control decisions.")
 
 if "token" not in st.session_state or not st.session_state.token:
@@ -66,7 +66,7 @@ with col_chart1:
                 tooltip=["Role", "Total Requests"]
             )
             pie = base.mark_arc(innerRadius=50).properties(height=300)
-            st.altair_chart(pie, use_container_width=True)
+            st.altair_chart(pie, width="stretch")
         else:
             st.info("No role distribution data available yet.")
 
@@ -84,7 +84,7 @@ with col_chart2:
                 color=alt.Color('action:N', scale=alt.Scale(domain=['ALLOWED', 'DENIED'], range=['#2e7d32', '#d32f2f']), legend=alt.Legend(orient="bottom", title="Decision")),
                 tooltip=[alt.Tooltip('date:T', title='Date', format='%Y-%m-%d'), alt.Tooltip('action:N', title='Action'), alt.Tooltip('count:Q', title='Requests')]
             ).properties(height=300)
-            st.altair_chart(bar_chart, use_container_width=True)
+            st.altair_chart(bar_chart, width="stretch")
         else:
             st.info("No trend data available yet.")
 
@@ -116,7 +116,7 @@ if recent_denials:
         return f'color: {color}; font-weight: bold'
 
     styled_df = df_denials.style.map(color_method, subset=['HTTP Method'])
-    st.dataframe(styled_df, use_container_width=True, hide_index=True)
+    st.dataframe(styled_df, width="stretch", hide_index=True)
 else:
     st.info(
         "**0 Denials is a feature, not a bug!** 🛡️\n\n"
@@ -168,7 +168,7 @@ with st.form("rbac_simulator_form"):
         )
     with sim_col4:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-        submitted = st.form_submit_button("Test Engine", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("Test Engine", icon=":material/security:", type="primary", width="stretch")
 
 if submitted:
     with st.spinner("Evaluating Casbin Policies..."):

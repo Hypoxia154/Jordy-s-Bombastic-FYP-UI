@@ -7,7 +7,7 @@ from mvvm.viewmodels.users_vm import UsersViewModel
 # -----------------------------
 # Auth & Admin Guard
 # -----------------------------
-st.set_page_config(page_title="Admin Docs", page_icon="📂")
+st.set_page_config(page_title="Admin Docs", page_icon=":material/admin_panel_settings:")
 
 token = st.session_state.get("token")
 user = st.session_state.get("user")
@@ -22,12 +22,12 @@ if "admin_unlocked" not in st.session_state:
     st.session_state["admin_unlocked"] = False
 
 if not st.session_state["admin_unlocked"]:
-    st.title("🔐 Admin Access Required")
+    st.title("Admin Access Required")
     st.caption("This area is restricted to Master/Admin users.")
 
     with st.form("admin_login"):
         pwd = st.text_input("Enter Master Password", type="password")
-        submitted = st.form_submit_button("Unlock")
+        submitted = st.form_submit_button("Unlock", icon=":material/lock_open:")
 
         if submitted:
             if pwd == "Docs123":  # TODO: Move to env var or real RBAC
@@ -52,19 +52,19 @@ except Exception as e:
 # -----------------------------
 # UI
 # -----------------------------
-st.title("📂 Document Management")
+st.title("Document Management")
 st.caption("Manage the knowledge base. Use the Access button to control which staff can see each document.")
 
 col1, col2 = st.columns([0.8, 0.2])
-if col2.button("🔄 Refresh", use_container_width=True):
+if col2.button("Refresh", icon=":material/refresh:", width="stretch"):
     st.rerun()
 
 # --- Upload Section ---
-with st.expander("📤 Upload Document", expanded=True, icon=":material/upload_file:"):
+with st.expander("Upload Document", expanded=True, icon=":material/upload_file:"):
     st.caption("Upload a PDF or TXT file to add it to the knowledge base.")
     uploaded = st.file_uploader("Upload PDF/TXT", type=["pdf", "txt"], label_visibility="collapsed", key="admin_upload")
     if uploaded is not None:
-        if st.button("📥 Ingest File", type="primary", use_container_width=True):
+        if st.button("Ingest File", icon=":material/play_circle:", type="primary", width="stretch"):
             with st.spinner("Ingesting document..."):
                 try:
                     from mvvm.viewmodels.chat_vm import ChatViewModel
@@ -99,7 +99,7 @@ else:
     # Search / filter row
     sc1, sc2 = st.columns([0.7, 0.3])
     search_term = sc1.text_input(
-        "🔍 Search documents",
+        "Search documents",
         placeholder="Filter by filename...",
         key="admin_doc_search",
         label_visibility="collapsed",
@@ -132,17 +132,17 @@ else:
                 current_access = []
 
             if current_access:
-                c2.caption(f"👥 {len(current_access)} staff")
+                c2.caption(f"{len(current_access)} staff")
             else:
-                c2.caption("🌐 All")
+                c2.caption("Private")
 
             # Manage Access expander inline using session state toggle
             access_key = f"access_open_{file}"
-            if c3.button("✏️ Set Access", key=f"acc_btn_{file}", use_container_width=True):
+            if c3.button("Set Access", icon=":material/manage_accounts:", key=f"acc_btn_{file}", width="stretch"):
                 st.session_state[access_key] = not st.session_state.get(access_key, False)
 
             # Delete button
-            if c4.button("🗑️ Delete", key=f"del_{file}", type="primary", use_container_width=True):
+            if c4.button("Delete", icon=":material/delete:", key=f"del_{file}", type="primary", width="stretch"):
                 with st.spinner(f"Deleting {file}..."):
                     try:
                         vm.delete_document(file)
@@ -168,7 +168,7 @@ else:
                             help="Leave empty = all users can see this document",
                         )
                         scol1, scol2 = st.columns(2)
-                        if scol1.button("💾 Save", key=f"save_{file}", type="primary", use_container_width=True):
+                        if scol1.button("Save", icon=":material/save:", key=f"save_{file}", type="primary", width="stretch"):
                             try:
                                 vm.set_access(file, selected)
                                 st.success(f"Access updated for **{file}**")
@@ -177,11 +177,11 @@ else:
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Failed: {e}")
-                        if scol2.button("Cancel", key=f"cancel_{file}", use_container_width=True):
+                        if scol2.button("Cancel", key=f"cancel_{file}", width="stretch"):
                             st.session_state[access_key] = False
                             st.rerun()
 
 st.divider()
-if st.button("🔒 Lock Admin Mode"):
+if st.button("Lock Admin Mode", icon=":material/lock:"):
     st.session_state["admin_unlocked"] = False
     st.rerun()

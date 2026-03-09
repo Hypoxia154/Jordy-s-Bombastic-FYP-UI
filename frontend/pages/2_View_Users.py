@@ -26,13 +26,13 @@ with st.spinner("Loading users…"):
 
 render_flash()
 
-if st.button("🔄 Refresh", use_container_width=False):
+if st.button("Refresh", icon=":material/refresh:", width="content"):
     st.rerun()
 
 df = pd.DataFrame([u if isinstance(u, dict) else u.model_dump() for u in users])
 if not df.empty and "role" in df.columns:
     df["role"] = df["role"].astype(str).str.upper()
 
-st.dataframe(df, use_container_width=True, hide_index=True)
+st.dataframe(df, width="stretch", hide_index=True)
 
 render_user_metrics(users)

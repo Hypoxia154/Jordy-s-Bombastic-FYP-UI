@@ -14,7 +14,7 @@ VIZ_KEYWORDS = {"visualize", "visualise", "chart", "graph", "plot", "show chart"
 @st.dialog("Rename Chat")
 def rename_chat_dialog(session_id: int, current_title: str, vm: ChatViewModel):
     new_title = st.text_input("New title", value=current_title, key=f"ren_{session_id}")
-    if st.button("Save", type="primary", use_container_width=True):
+    if st.button("Save", type="primary", width="stretch"):
         if new_title.strip() and new_title.strip() != current_title:
             try:
                 vm.rename_session(session_id, new_title.strip())
@@ -27,7 +27,7 @@ def _is_viz_request(text: str) -> bool:
     return any(kw in t for kw in VIZ_KEYWORDS)
 
 
-def _render_chart(chart_data: list, caption: str = "📊 Chart"):
+def _render_chart(chart_data: list, caption: str = "Chart"):
     """Renders an Altair chart from a list of {label, value, chart_type} dicts."""
     try:
         df = pd.DataFrame(chart_data)
@@ -59,9 +59,9 @@ def _render_chart(chart_data: list, caption: str = "📊 Chart"):
             
         # Common layout configurations
         chart = chart.properties(height=350).configure_view(strokeWidth=0)
-        st.altair_chart(chart, use_container_width=True)
-        with st.expander("📋 View Raw Data"):
-            st.dataframe(df[["label", "value"]], use_container_width=True)
+        st.altair_chart(chart, width="stretch")
+        with st.expander("View Raw Data"):
+            st.dataframe(df[["label", "value"]], width="stretch")
     except Exception as e:
         st.error(f"Could not render chart: {e}")
 
@@ -86,7 +86,7 @@ def render_documents_panel(api):
     mode = c3.radio("Output", ["Infographic", "Summary"], horizontal=False,
                     label_visibility="collapsed", key="sum_mode")
 
-    if st.button("✨ Generate", type="primary", use_container_width=False, key="sum_generate"):
+    if st.button("Generate", type="primary", width="content", key="sum_generate"):
         payload = {"file_name": selected, "focus": focus or None, "mode": mode}
         with st.spinner(f"Generating {mode} for **{selected}**…"):
             try:
@@ -96,9 +96,8 @@ def render_documents_panel(api):
                 st.error(f"Summary failed: {e}")
 
 
-# -----------------------------
-# Auth guard
-# -----------------------------
+
+# Auth token
 token = st.session_state.get("token")
 user = st.session_state.get("user")
 if not token or not user:
@@ -109,16 +108,16 @@ if not token or not user:
 # Ensure stable state keys
 st.session_state.setdefault("active_session_id", None)
 
-# -----------------------------
+
 # MVVM setup
-# -----------------------------
+
 base_url = st.session_state.get("api_base_url", "http://127.0.0.1:8000")
 api = ApiClient(base_url=base_url, token=token)
 vm = ChatViewModel(api)
 
-# -----------------------------
+
 # UI (View)
-# -----------------------------
+
 st.title("Chat")
 st.caption("Ask about tenancy agreements, policies, and real estate procedures.")
 
@@ -129,13 +128,26 @@ st.caption("Ask about tenancy agreements, policies, and real estate procedures."
 # Sidebar: Sessions + Upload
 # -----------------------------
 with st.sidebar:
+    st.markdown("""
+    <style>
+    /* Prevent sidebar buttons (like chat history) from wrapping text into multiple lines */
+    [data-testid="stSidebar"] div[data-testid="stButton"] button p {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     # Document Scope Section
-    with st.expander("📂 Document Scope", expanded=True):
+    with st.expander("Document Scope", expanded=True, icon=":material/description:"):
         st.caption("Scope queries to a single document.")
         try:
             all_doc_files = api.get("/crag/documents/my").get("files", [])
         except Exception:
             all_doc_files = []
+
+        if not all_doc_files:
+            st.warning("You have no documents assigned. Please ask your administrator for access.")
 
         _DOC_ALL = "🌐 All Documents"
         doc_options = [_DOC_ALL] + all_doc_files
@@ -172,7 +184,7 @@ with st.sidebar:
     # History Section
     with st.expander("History", expanded=True, icon=":material/history:"):
         # New chat button
-        if st.button("✏️ New Chat", help="Start a fresh chat", use_container_width=True):
+        if st.button("New Chat", icon=":material/add_comment:", help="Start a fresh chat", width="stretch"):
             import time
             st.session_state["active_session_id"] = None
             st.rerun()
@@ -203,24 +215,24 @@ with st.sidebar:
                 sc1, sc2 = st.columns([0.85, 0.15], vertical_alignment="center", gap="small")
 
                 btn_type = "primary" if is_active else "secondary"
-                if sc1.button(label, key=f"sess_{s.id}", use_container_width=True,
+                if sc1.button(label, key=f"sess_{s.id}", width="stretch",
                               type=btn_type, help=f"{raw_title} · {d}"):
                     st.session_state["active_session_id"] = s.id
                     st.rerun()
 
-                with sc2.popover("⋮", use_container_width=True):
-                    if st.button("✏️ Rename", key=f"renbtn_{s.id}", use_container_width=True):
+                with sc2.popover("⋮", width="stretch"):
+                    if st.button("Rename", icon=":material/edit:", key=f"renbtn_{s.id}", width="stretch"):
                         rename_chat_dialog(s.id, raw_title, vm)
                         
-                    pin_label = "📌 Unpin" if is_pinned else "📌 Pin"
-                    if st.button(pin_label, key=f"pin_{s.id}", use_container_width=True):
+                    pin_label = "Unpin" if is_pinned else "Pin"
+                    if st.button(pin_label, icon=":material/push_pin:", key=f"pin_{s.id}", width="stretch"):
                         try:
                             vm.pin_session(s.id, not is_pinned)
                         except Exception:
                             pass
                         st.rerun()
-                    if st.button("🗑️ Delete", key=f"del_{s.id}",
-                                 use_container_width=True, type="primary"):
+                    if st.button("Delete", icon=":material/delete:", key=f"del_{s.id}",
+                                 width="stretch", type="primary"):
                         try:
                             vm.delete_session(s.id)
                             if st.session_state.get("active_session_id") == s.id:
@@ -253,7 +265,7 @@ if active_session_id:
 # ─────────────────────────────
 # Document Summary Panel (top of main area)
 # ─────────────────────────────
-with st.expander("📄 Summarize a Document", expanded=False):
+with st.expander("Summarize a Document", expanded=False, icon=":material/summarize:"):
     render_documents_panel(api)
 
 # Show summary result if available
@@ -340,11 +352,16 @@ if st.session_state.get("doc_summary_result"):
 
 # Empty State / Welcome Screen with suggested questions
 if not messages:
+    doc_warning = ""
+    if not all_doc_files:
+        doc_warning = "<p style='color:#ef4444;font-weight:bold;margin-top:1rem;'>⚠️ You have no documents assigned. Please ask your administrator for access.</p>"
+
     st.markdown(
-        """
+        f"""
         <div style="text-align:center;padding:2rem 1rem 1rem;color:#9ca3af;">
             <h3 style="color:#e2e8f0;">👋 Welcome back!</h3>
             <p>Ask anything about tenancy agreements, policies, and real estate procedures.</p>
+            {doc_warning}
         </div>
         """,
         unsafe_allow_html=True
@@ -362,7 +379,7 @@ if not messages:
     st.markdown("<p style='text-align:center;font-size:0.82rem;color:#6b7280;margin-bottom:0.5rem;'>💡 Try asking:</p>", unsafe_allow_html=True)
     cols = st.columns(2)
     for idx, suggestion in enumerate(SUGGESTED):
-        if cols[idx % 2].button(suggestion, key=f"sugg_{idx}", use_container_width=True):
+        if cols[idx % 2].button(suggestion, key=f"sugg_{idx}", width="stretch"):
             st.session_state["_prefill_question"] = suggestion
             st.rerun()
 

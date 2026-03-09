@@ -5,7 +5,7 @@ from mvvm.viewmodels.logs_vm import LogsViewModel
 
 st.set_page_config(page_title="System Logs", page_icon="📡", layout="wide")
 
-st.title("📡 System Logs")
+st.title("System Logs")
 st.markdown("View all backend server crashes, warnings, and error traces. **Master use only.**")
 
 if "user" not in st.session_state or st.session_state.user.get("role") != "master":
@@ -18,7 +18,7 @@ vm = LogsViewModel(api)
 
 col1, col2 = st.columns([0.8, 0.2])
 with col2:
-    if st.button("🗑️ Clear Logs", use_container_width=True, type="primary"):
+    if st.button("Clear Logs", icon=":material/delete_sweep:", width="stretch", type="primary"):
         vm.clear_system_logs()
         st.success("Logs cleared.")
         st.rerun()

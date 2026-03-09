@@ -46,8 +46,8 @@ class DocsRepository:
     def get_accessible_files(self, username: str, role: str, all_files: list[str]) -> list[str]:
         """
         Admin/master → all files.
-        Staff → only files explicitly assigned to them (if a file has no
-                assignments at all, it is visible to everyone as a fallback).
+        Staff → only files explicitly assigned to them in the doc_access table.
+        Newly uploaded files are private by default.
         """
         if role in ("admin", "master"):
             return all_files
@@ -59,17 +59,4 @@ class DocsRepository:
             ).fetchall()
             assigned = {r["file_name"] for r in rows}
 
-            # Files with NO access rows are globally visible
-            all_assigned_files = {
-                r["file_name"]
-                for r in conn.execute("SELECT DISTINCT file_name FROM doc_access").fetchall()
-            }
-
-        accessible = []
-        for f in all_files:
-            if f in assigned:
-                accessible.append(f)
-            elif f not in all_assigned_files:
-                # unmanaged file — visible to all
-                accessible.append(f)
-        return accessible
+        return [f for f in all_files if f in assigned]

@@ -26,10 +26,14 @@ def visualize(payload: VisualizeRequest, current=Depends(get_current_user)):
     svc = ChartService()
     if not svc.enabled:
         raise HTTPException(status_code=503, detail="Gemini chart service not configured.")
-    data = svc.extract_chart_data(payload.text, payload.hint)
-    if not data:
+    result_dict = svc.extract_chart_data(payload.text, payload.hint)
+    if not result_dict or not result_dict.get("data"):
         raise HTTPException(status_code=422, detail="No chartable numerical data found in this response.")
-    return {"chart_data": data}
+    
+    return {
+        "chart_data": result_dict["data"],
+        "summary": result_dict["summary"]
+    }
 
 
 @router.post("/query", response_model=QueryResponse)
@@ -271,11 +275,21 @@ def query_stream(
         if extracted:
             repo.patch_session_state(session_id, {"user_name": extracted})
 
+        # Get the user's accessible documents
+        from app.db.repositories.docs import DocsRepository
+        all_files = service.list_documents()
+        accessible_files = DocsRepository().get_accessible_files(
+            username=current["username"],
+            role=current["role"],
+            all_files=all_files,
+        )
+
         plan = service.build_rag_plan(
             query=payload.question,
             history=history_messages,
             session_state=repo.get_session_state(session_id),  # refresh
             file_filter=payload.file_filter or None,
+            accessible_files=accessible_files,
         )
 
         intent = plan.get("intent", "UNKNOWN")

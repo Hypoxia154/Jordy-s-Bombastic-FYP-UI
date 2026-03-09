@@ -73,22 +73,22 @@ def chat_bubble(role: str, content: str, sources=None, confidence=None, timestam
         </style>
         """, unsafe_allow_html=True)
 
-        with st.chat_message("assistant", avatar="🤖"):
+        with st.chat_message("assistant", avatar=":material/smart_toy:"):
             st.markdown(content)
 
             # ── Confidence badge ──────────────────────────────────────────
             if confidence is not None:
                 pct = int(confidence * 100)
                 if pct >= 70:
-                    color, label, emoji = "#10b981", "High", "🟢"
+                    color, label = "#10b981", "High"
                 elif pct >= 40:
-                    color, label, emoji = "#f59e0b", "Medium", "🟡"
+                    color, label = "#f59e0b", "Medium"
                 else:
-                    color, label, emoji = "#ef4444", "Low", "🔴"
+                    color, label = "#ef4444", "Low"
                 st.markdown(
                     f"""<div style="margin-top:0.6rem;display:flex;align-items:center;gap:0.5rem;">
 <span style="font-size:0.78rem;color:#9ca3af;">Confidence</span>
-<span style="font-size:0.78rem;font-weight:600;color:{color};">{emoji} {label} ({pct}%)</span>
+<span style="font-size:0.78rem;font-weight:600;color:{color};">{label} ({pct}%)</span>
 <div style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;max-width:100px;">
   <div style="width:{pct}%;height:4px;background:{color};border-radius:2px;"></div>
 </div></div>""",
@@ -100,7 +100,7 @@ def chat_bubble(role: str, content: str, sources=None, confidence=None, timestam
                 chips = "".join(
                     f'<span style="display:inline-block;margin:0.2rem 0.2rem 0 0;padding:0.2rem 0.6rem;'
                     f'background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);'
-                    f'border-radius:999px;font-size:0.75rem;color:#93c5fd;">📄 {s}</span>'
+                    f'border-radius:999px;font-size:0.75rem;color:#93c5fd;">{s}</span>'
                     for s in sources
                 )
                 st.markdown(

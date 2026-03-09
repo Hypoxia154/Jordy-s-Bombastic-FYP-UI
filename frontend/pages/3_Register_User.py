@@ -27,7 +27,7 @@ with st.form("register_user", clear_on_submit=True):
         email = st.text_input("Email*")
         pwd = st.text_input("Password*", type="password")
     pwd2 = st.text_input("Confirm password*", type="password")
-    submit = st.form_submit_button("Create staff user", type="primary", use_container_width=True)
+    submit = st.form_submit_button("Create staff user", type="primary", width="stretch", icon=":material/person_add:")
 
 if submit:
     if not all([username, name, email, pwd, pwd2]):

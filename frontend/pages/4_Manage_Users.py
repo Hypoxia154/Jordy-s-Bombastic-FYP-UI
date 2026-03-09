@@ -114,7 +114,7 @@ onLoad_manage_users()
 st.title("Manage Users")
 render_flash()
 
-if st.button("Refresh"):
+if st.button("Refresh", icon=":material/refresh:"):
     onLoad_manage_users()
     st.rerun()
 
@@ -156,7 +156,7 @@ with st.form("edit_form"):
     st.text_input("Name", value=st.session_state.get("edit_name", u.get("name")), key="edit_name")
     st.text_input("Email", value=st.session_state.get("edit_email", u.get("email")), key="edit_email")
     st.text_input("New Password", type="password", key="edit_password")
-    if st.form_submit_button("Save"):
+    if st.form_submit_button("Save", icon=":material/save:"):
         onPress_update_user()
 
 st.divider()
@@ -172,11 +172,11 @@ else:
         curr_role = u.get("role", "staff")
         ridx = roles.index(curr_role) if curr_role in roles else 0
         st.selectbox("Change Role", roles, index=ridx, key="edit_role")
-        st.button("Update Role", on_click=onPress_update_role)
+        st.button("Update Role", icon=":material/edit_attributes:", on_click=onPress_update_role)
     with c2:
         st.warning("Delete user?")
         st.checkbox("Confirm delete", key="confirm_delete")
-        st.button("Delete User", type="primary", on_click=onPress_delete_user)
+        st.button("Delete User", icon=":material/delete:", type="primary", on_click=onPress_delete_user)
 
 # Display metrics
 all_users = st.session_state.get("manage_users_all")

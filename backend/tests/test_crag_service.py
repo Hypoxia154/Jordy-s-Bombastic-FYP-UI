@@ -203,8 +203,8 @@ class TestChartService:
                 assert not svc.enabled
 
     def test_extract_chart_data_parses_valid_json(self):
-        """A well-formed OpenAI completion should be parsed into a chart_data list."""
-        fake_json = '[{"label": "Jan", "value": 100, "chart_type": "bar"}, {"label": "Feb", "value": 200, "chart_type": "bar"}]'
+        """A well-formed OpenAI completion should be parsed into a chart_data dict."""
+        fake_json = '{"data": [{"label": "Jan", "value": 100, "chart_type": "bar"}, {"label": "Feb", "value": 200, "chart_type": "bar"}], "summary": "test summary"}'
 
         with patch("app.services.chart_service.settings") as mock_settings, \
              patch("app.services.chart_service.OpenAI") as mock_openai_cls, \
@@ -222,6 +222,19 @@ class TestChartService:
 
             result = svc.extract_chart_data("Some text with numbers", "visualize this as a bar chart")
             assert result is not None
-            assert isinstance(result, list)
-            assert result[0]["label"] == "Jan"
-            assert result[1]["value"] == 200
+            assert isinstance(result, dict)
+            assert "data" in result
+            assert result["data"][0]["label"] == "Jan"
+            assert result["data"][1]["value"] == 200
+
+            print("\n" + "="*50)
+            print(" ✅ TEST SUMMARY: test_extract_chart_data_parses_valid_json")
+            print("="*50)
+            print(" The test passed because:")
+            print(" 1. The mocked external AI response returned correctly formatted JSON.")
+            print("    (e.g., {'data': [...], 'summary': 'test summary'})")
+            print(" 2. The ChartService's `extract_chart_data` method successfully extracted,")
+            print("    parsed, and loaded the JSON string into a Python Dictionary.")
+            print(" 3. Assertions successfully matched the dict keys, verifying the 'Jan' label")
+            print("    and '200' value within the 'data' array.")
+            print("="*50 + "\n")

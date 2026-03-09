@@ -55,12 +55,12 @@ class ChartService:
 
     def extract_chart_data(
         self, answer_text: str, query: str
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> Optional[Dict[str, Any]]:
         """
         Asks the external AI to extract numerical data from chatbot answer text.
 
-        Returns a list of dicts like:
-            [{"label": "Deposit", "value": 2000, "chart_type": "bar"}, ...]
+        Returns a dict like:
+            {"data": [{"label": "Deposit", "value": 2000, "chart_type": "bar"}], "summary": "A brief explanation"}
         or None if no chart-worthy data is found.
         """
         if not self.enabled:
@@ -75,9 +75,10 @@ class ChartService:
             f"Text:\n{answer_text}\n\n"
             f"User's chart request: {query}\n\n"
             "Rules:\n"
-            "1. If there is chartable numerical data, output ONLY a JSON array.\n"
-            "2. Each item must have: 'label' (string), 'value' (number).\n"
-            "3. Select chart_type using these rules IN ORDER:\n"
+            "1. If there is chartable numerical data, output ONLY a JSON object with two keys: 'data' (array) and 'summary' (string).\n"
+            "2. The 'summary' should be a 1-2 sentence explanation of what the chart is showing or the key takeaway.\n"
+            "3. In the 'data' array, each item must have: 'label' (string), 'value' (number).\n"
+            "4. Select chart_type using these rules IN ORDER:\n"
             "   a) EXPLICIT: If user says 'pie' or 'pie chart' → ALL items use 'pie'.\n"
             "   b) EXPLICIT: If user says 'line' or 'line graph' or 'trend' → ALL items use 'line'.\n"
             "   c) EXPLICIT: If user says 'bar' or 'bar chart' or 'compare' → ALL items use 'bar'.\n"
@@ -88,18 +89,10 @@ class ChartService:
             "   g) DEFAULT: When unsure whether the values form a whole or are independent comparisons,\n"
             "      prefer 'pie' for financial/cost data, 'bar' for performance/count data.\n"
             "   All items in the array MUST use the same chart_type.\n"
-            "4. If there is NO numerical data to chart, output exactly: null\n"
-            "5. Output ONLY valid JSON or null. No explanation, no markdown, no code fences.\n\n"
-            "Example bar (comparing 2 values): "
-            '[{"label": "Last Year", "value": 1500, "chart_type": "bar"}, '
-            '{"label": "This Year", "value": 1800, "chart_type": "bar"}]\n'
-            "Example pie (cost breakdown with 3+ items): "
-            '[{"label": "Rent", "value": 3000, "chart_type": "pie"}, '
-            '{"label": "Deposit", "value": 6000, "chart_type": "pie"}, '
-            '{"label": "Utilities", "value": 300, "chart_type": "pie"}]\n'
-            "Example line (over time): "
-            '[{"label": "Jan", "value": 1200, "chart_type": "line"}, '
-            '{"label": "Feb", "value": 1350, "chart_type": "line"}]'
+            "5. If there is NO numerical data to chart, output exactly: null\n"
+            "6. Output ONLY valid JSON or null. No explanation, no markdown, no code fences.\n\n"
+            "Example response (comparing values): \n"
+            '{"data": [{"label": "Last Year", "value": 1500, "chart_type": "bar"}, {"label": "This Year", "value": 1800, "chart_type": "bar"}], "summary": "Comparing revenue between last year and this year shows a $300 increase."}'
         )
 
         try:
@@ -117,17 +110,21 @@ class ChartService:
                 print(" [Chart] No chart data found.")
                 return None
 
-            match = re.search(r'\[.*\]', raw, re.DOTALL)
+            match = re.search(r'\{.*\}', raw, re.DOTALL)
             if not match:
-                print(" [Chart] No JSON array found in response.")
+                print(" [Chart] No JSON object found in response.")
                 return None
 
-            data = json.loads(match.group())
-
-            if not isinstance(data, list) or len(data) == 0:
+            result = json.loads(match.group())
+            
+            if "data" not in result or not isinstance(result["data"], list) or len(result["data"]) == 0:
+                print(" [Chart] Invalid or empty 'data' array in response.")
                 return None
+                
+            data = result["data"]
+
             if not all("label" in item and "value" in item for item in data):
-                print(" [Chart] Invalid structure in chart data.")
+                print(" [Chart] Invalid structure in chart data items.")
                 return None
 
             for item in data:
@@ -136,7 +133,10 @@ class ChartService:
                     item["chart_type"] = "bar"
 
             print(f" [Chart] Extracted {len(data)} data points.")
-            return data
+            return {
+                "data": data,
+                "summary": result.get("summary", "No summary provided.")
+            }
 
         except json.JSONDecodeError as e:
             print(f" [Chart] JSON parse error: {e}")

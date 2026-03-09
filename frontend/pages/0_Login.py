@@ -84,7 +84,7 @@ with col2:
         
         st.markdown("<br>", unsafe_allow_html=True) # Spacer
         
-        submitted = st.form_submit_button("Log in", type="primary", use_container_width="stretch")
+        submitted = st.form_submit_button("Log in", type="primary", width="stretch")
 
     if submitted:
         # Your ViewModel handles setting session_state['user'] automatically!

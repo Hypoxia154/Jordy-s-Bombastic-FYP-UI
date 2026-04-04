@@ -3,10 +3,12 @@ from __future__ import annotations
 import os
 import requests
 from typing import Any
+import json
+
 
 
 class ApiClient:
-    def __init__(self, base_url: str | None = None, token: str | None = None, timeout_s: int = 30):
+    def __init__(self, base_url: str | None = None, token: str | None = None, timeout_s: int = 300):
         self.base_url = (base_url or os.getenv("API_BASE_URL", "http://localhost:8000")).rstrip("/")
         self.token = token
         self.timeout_s = timeout_s
@@ -40,7 +42,7 @@ class ApiClient:
         return r.json() if r.text else {"status": "ok"}
 
     def post_file(self, path: str, files: dict) -> Any:
-        # For file uploads, we let requests library set the Content-Type boundary
+        # for file uploads, we let requests library set the content-type boundary
         headers = self._headers(content_type=None)
         r = requests.post(self.base_url + path, files=files, headers=headers, timeout=self.timeout_s)
         self._raise(r)
@@ -54,3 +56,13 @@ class ApiClient:
             except Exception:
                 detail = r.text
             raise RuntimeError(f"{r.status_code}: {detail}")
+
+    def post_stream(self, path: str, payload: dict):
+        url = self.base_url + path
+        with requests.post(url, json=payload, headers=self._headers(), stream=True, timeout=self.timeout_s) as r:
+            self._raise(r)
+            for raw in r.iter_lines(chunk_size=1, decode_unicode=True, delimiter="\n"):
+                if not raw:
+                    continue
+                if raw.startswith("data: "):
+                    yield json.loads(raw[len("data: "):])

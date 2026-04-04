@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr
-from typing import Literal, Any, Dict
+from typing import Literal, Any, Dict, Optional
+
 
 Role = Literal["master", "admin", "staff"]
 
@@ -46,10 +47,18 @@ class ChatSessionPublic(BaseModel):
     username: str
     title: str
     created_at: str
+    pinned: int = 0
 
 
 class ChatSessionCreateRequest(BaseModel):
     first_user_message: str
+
+
+class EvidenceItem(BaseModel):
+    file_name: str
+    page_label: Optional[str] = None
+    score: float
+    excerpt: str
 
 
 class ChatMessagePublic(BaseModel):
@@ -58,6 +67,8 @@ class ChatMessagePublic(BaseModel):
     timestamp: str
     sources: list[str] = []
     confidence: float | None = None
+    bleu_score: float | None = None
+    evidence: list[EvidenceItem] = []
 
 
 class ChatMessageCreateRequest(BaseModel):
@@ -66,16 +77,21 @@ class ChatMessageCreateRequest(BaseModel):
     timestamp: str | None = None
     sources: list[str] | None = None
     confidence: float | None = None
+    bleu_score: float | None = None
+    evidence: list[EvidenceItem] | None = None
 
 
 class QueryRequest(BaseModel):
     question: str = Field(min_length=1)
     session_id: int | None = None
+    file_filter: str | None = None
 
 
 class QueryResponse(BaseModel):
     session_id: int
     answer: str
     sources: list[str]
+    evidence: list[EvidenceItem]
+    bleu_score: float
     confidence: float
-    chart_data: Dict[str, Any] | None = None
+    chart_data: list[Dict[str, Any]] | None = None

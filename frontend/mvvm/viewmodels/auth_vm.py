@@ -27,7 +27,7 @@ class AuthViewModel:
             if not token or not user:
                 return AuthState(ok=False, message="Login response missing token/user.")
 
-            # Persist into Streamlit session
+            # persist into streamlit session
             st.session_state["token"] = token
             st.session_state["user"] = user
             st.session_state["is_authenticated"] = True
@@ -35,7 +35,7 @@ class AuthViewModel:
             return AuthState(ok=True, message="Login successful.", token=token, user=user)
 
         except Exception as e:
-            # Don’t crash Streamlit — return clean state
+            # don’t crash streamlit — return clean state
             st.session_state["token"] = None
             st.session_state["user"] = None
             st.session_state["is_authenticated"] = False

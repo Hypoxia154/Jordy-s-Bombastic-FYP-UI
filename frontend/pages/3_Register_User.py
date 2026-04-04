@@ -14,7 +14,11 @@ vm = UsersViewModel(api)
 st.title("Register User")
 st.caption("Create a new staff user (Admin & Master).")
 
-with st.form("register_user"):
+# show success banner from previous submit (persists across rerun)
+if st.session_state.pop("_register_success", None):
+    st.success("✅ User created successfully! The form has been cleared.")
+
+with st.form("register_user", clear_on_submit=True):
     c1, c2 = st.columns(2)
     with c1:
         username = st.text_input("Username*")
@@ -23,7 +27,7 @@ with st.form("register_user"):
         email = st.text_input("Email*")
         pwd = st.text_input("Password*", type="password")
     pwd2 = st.text_input("Confirm password*", type="password")
-    submit = st.form_submit_button("Create staff user")
+    submit = st.form_submit_button("Create staff user", type="primary", width="stretch", icon=":material/person_add:")
 
 if submit:
     if not all([username, name, email, pwd, pwd2]):
@@ -33,13 +37,14 @@ if submit:
     else:
         try:
             vm.create_user(username=username, password=pwd, name=name, email=email, role="staff")
-            st.success(f"Created user: {username}")
+            st.session_state["_register_success"] = True
+            st.rerun()   # clears the form and shows the banner
         except Exception as e:
             st.error(f"Failed to create user: {e}")
 
-# Display metrics
+# display metrics
 try:
     all_users = vm.list_users()
     render_user_metrics(all_users)
-except:
+except Exception:
     pass

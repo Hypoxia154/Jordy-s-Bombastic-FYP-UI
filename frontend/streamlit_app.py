@@ -3,9 +3,7 @@ import importlib.util
 from ui.css import apply_custom_css
 from ui.components import sidebar_user_card
 
-# -----------------------------
-# Init Global State
-# -----------------------------
+# init global state
 if "token" not in st.session_state:
     st.session_state.token = None
 if "user" not in st.session_state:
@@ -13,16 +11,12 @@ if "user" not in st.session_state:
 if "is_authenticated" not in st.session_state:
     st.session_state.is_authenticated = False
 
-# -----------------------------
-# Auth Check
-# -----------------------------
+# auth check
 is_logged_in = st.session_state.get("is_authenticated", False)
 user = st.session_state.get("user") or {}
 role = (user.get("role") or "").lower()
 
-# -----------------------------
-# Page Config
-# -----------------------------
+# page config
 st.set_page_config(
     page_title="CRAG",
     layout="wide",
@@ -31,11 +25,9 @@ st.set_page_config(
 
 apply_custom_css()
 
-# -----------------------------
-# Not Logged In - Show Login
-# -----------------------------
+# not logged in - show login
 if not is_logged_in:
-    # Force sidebar to be hidden on login page
+    # force sidebar to be hidden on login page
     st.markdown(
         """
         <style>
@@ -45,7 +37,7 @@ if not is_logged_in:
         unsafe_allow_html=True
     )
 
-    # Import and run login page
+    # import and run login page
     try:
         spec = importlib.util.spec_from_file_location("login", "pages/0_Login.py")
         login_module = importlib.util.module_from_spec(spec)
@@ -54,53 +46,55 @@ if not is_logged_in:
         st.error(f"Error loading login page: {e}")
     st.stop()
 
-# -----------------------------
-# Logged In - Sidebar Navigation
-# -----------------------------
+# logged in - sidebar navigation
 
-# Define Pages
+# define pages
 chat_page = st.Page("pages/1_Chat.py", title="Chat", icon=":material/chat:")
 view_users_page = st.Page("pages/2_View_Users.py", title="View Users", icon=":material/group:")
 register_page = st.Page("pages/3_Register_User.py", title="Register User", icon=":material/person_add:")
 manage_page = st.Page("pages/4_Manage_Users.py", title="Manage Users", icon=":material/manage_accounts:")
+admin_docs_page = st.Page("pages/5_Admin_Docs.py", title="Admin Docs", icon=":material/folder_managed:")
+logs_page = st.Page("pages/6_System_Logs.py", title="System Logs", icon=":material/bug_report:")
+rbac_metrics_page = st.Page("pages/7_RBAC_Metrics.py", title="RBAC Metrics", icon=":material/security:")
 
-# Build navigation based on role
+# build navigation based on role
 pages = {}
 
 if role == "staff":
-    # Staff: Chat only
+    # staff: chat only
     pages["Chat"] = [chat_page]
 
 elif role == "admin":
-    # Admin: Chat + User Management (view/register only)
+    # admin: chat + user management + docs
     pages["Chat"] = [chat_page]
     pages["User Management"] = [view_users_page, register_page]
+    pages["Knowledge Base"] = [admin_docs_page]
 
 elif role == "master":
-    # Master: User Management only (all 3 pages) - NO CHAT
-    # Note: Logic ensures master lands on View Users as it's the first page
+    # master: managerial rols
+    pages["Chat"] = [chat_page]
     pages["User Management"] = [view_users_page, register_page, manage_page]
+    pages["Knowledge Base"] = [admin_docs_page]
+    pages["System Tools"] = [logs_page, rbac_metrics_page]
 
 else:
-    # Unknown role - default to chat
+    # unknown role - default to chat
     pages["Chat"] = [chat_page]
 
-# Run Navigation (Hidden, we build our own sidebar)
+# run navigation (hidden, we build our own sidebar)
 pg = st.navigation(pages, position="hidden")
 
-# -----------------------------
-# Custom Sidebar
-# -----------------------------
+# custom sidebar
 with st.sidebar:
-    # 1. User Profile Card
+    # user profile card
     sidebar_user_card(user)
     st.divider()
     
-    # 2. Navigation Menu
+    # navigation menu
     st.markdown("#### Menu")
     
     for section_name, page_list in pages.items():
-        # Optional: Add section headers if needed, or just list links
+        # optional: add section headers if needed, or just list links
         if len(pages) > 1 and section_name != "Chat":
              st.caption(section_name)
              
@@ -110,13 +104,16 @@ with st.sidebar:
     
     st.divider()
 
-    # 3. Logout
-    if st.button("Logout", icon=":material/logout:", use_container_width=True):
+# run the selected page
+pg.run()
+
+# bottom sidebar additions
+with st.sidebar:
+    st.divider()
+    # logout at absolute bottom
+    if st.button("Logout", icon=":material/logout:", width="stretch"):
         import time
         with st.spinner("Logging out..."):
             time.sleep(1.0)
         st.session_state.clear()
         st.rerun()
-
-# Run the selected page
-pg.run()

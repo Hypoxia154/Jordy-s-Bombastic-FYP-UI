@@ -4,13 +4,18 @@ from ui.theme import COLOR_THEME
 
 
 def apply_custom_css() -> None:
-    # 1. Hide Deploy Button
+    # hide deploy button
     st.markdown("<style>.stDeployButton{visibility:hidden;}</style>", unsafe_allow_html=True)
     
-    # 2. Modern Glassmorphism & Colors
+    # modern glassmorphism & colors
     st.markdown(
         f"""
         <style>
+        /* Hide 'Press Enter to submit form' hint inside inputs globally */
+        div[data-testid="InputInstructions"] {{
+            display: none !important;
+        }}
+        
         /* Import Font: Inter */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
@@ -37,6 +42,39 @@ def apply_custom_css() -> None:
             background: linear-gradient(135deg, #0f172a 0%, #172554 100%) !important;
             color: var(--text-main);
             animation: fadein 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }}
+
+        /* Make header transparent so the gradient shows through */
+        header[data-testid="stHeader"] {{
+            background-color: transparent !important;
+        }}
+
+        /* Glassmorphism Chat Footer backdrop */
+        div[data-testid="stBottom"] {{
+            background: rgba(15, 23, 42, 0.6) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }}
+        div[data-testid="stBottom"] > div {{
+             background-color: transparent !important;
+        }}
+        
+        /* Disclaimer Footer */
+        div[data-testid="stBottom"]::after {{
+            content: 'AI-powered analysis. Not legal advice. Verify with original documents.';
+            display: block;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 0.75rem;
+            padding-top: 0rem;
+            padding-bottom: 0.5rem;
+            pointer-events: none;
+        }}
+
+        /* Move the chat input textbox lower */
+        [data-testid="stChatInput"] {{
+            margin-bottom: -2.5rem !important;
         }}
 
         /* Sidebar Styling (Glassmorphism) */
@@ -127,6 +165,8 @@ def apply_custom_css() -> None:
         ::-webkit-scrollbar-thumb:hover {{
             background: #475569; 
         }}
+
+        
         </style>
         """,
         unsafe_allow_html=True,

@@ -1,7 +1,7 @@
 import sys
 import os
 
-# Add backend to path so imports work
+# add backend to path so imports work
 sys.path.append(os.path.join(os.getcwd()))
 
 import requests
@@ -11,7 +11,7 @@ from app.core.config import settings
 def check_ollama():
     print(f"\n[1] Checking Ollama ({settings.LLM_MODEL})...")
     try:
-        # Ollama default port 11434
+        # ollama default port 11434
         res = requests.get("http://localhost:11434/")
         if res.status_code == 200:
             print(" - Ollama is RUNNING.")

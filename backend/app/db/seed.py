@@ -59,9 +59,9 @@ def seed_defaults() -> None:
                 ),
             )
 
-        # Always ensure default docs are present and up-to-date
+        # always ensure default docs are present and up-to-date
         for title, content, tags in DEFAULT_DOCS:
-            # Check if doc exists by title
+            # check if doc exists by title
             row = conn.execute("SELECT id FROM knowledge_docs WHERE title=?", (title,)).fetchone()
             if row:
                 conn.execute(

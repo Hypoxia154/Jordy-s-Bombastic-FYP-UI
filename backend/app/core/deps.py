@@ -3,7 +3,16 @@ from app.core.security_casbin import enforcer
 
 from app.db.repositories.tokens import TokensRepository
 from app.db.repositories.users import UsersRepository
+from functools import lru_cache
 
+# --- service singletons (cached dependencies) ---
+# cragservice is heavy (loads embedding model, reranker, vector index, etc.).
+# caching it prevents re-initializing on every request.
+@lru_cache(maxsize=1)
+def get_crag_service():
+    # local import avoids any potential import cycles during app startup.
+    from app.services.crag_service import CRAGService
+    return CRAGService()
 
 def get_current_user(authorization: str | None = Header(default=None)) -> dict:
     if not authorization or not authorization.lower().startswith("bearer "):
@@ -25,12 +34,24 @@ def require_role(current_user: dict, allowed: set[str]) -> None:
     if current_user.get("role") not in allowed:
         raise HTTPException(status_code=403, detail="Forbidden.")
 
-def check_permission(request: Request, current_user: dict = Depends(get_current_user)) -> None:
+from fastapi import Header, HTTPException, Request, Depends, BackgroundTasks
+from app.core.security_casbin import enforcer
+from app.db.repositories.rbac import RBACRepository
+
+def check_permission(request: Request, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)) -> None:
     role = current_user.get("role", "user")
+    username = current_user.get("username", "unknown")
     
-    # Extract path template matching strict policy (e.g. /users/{username}) or fallback to raw path
+    # extract path template matching strict policy (e.g. /users/{username}) or fallback to raw path
     obj = request.scope.get("route").path if request.scope.get("route") else request.url.path
     act = request.method
     
-    if not enforcer.enforce(role, obj, act):
+    is_allowed = enforcer.enforce(role, obj, act)
+    
+    # log the decision in the background so it doesn't slow down the request
+    repo = RBACRepository()
+    action_str = "ALLOWED" if is_allowed else "DENIED"
+    background_tasks.add_task(repo.log_access, username, role, obj, act, action_str)
+
+    if not is_allowed:
         raise HTTPException(status_code=403, detail="Forbidden by Casbin.")

@@ -1825,12 +1825,36 @@ class CRAGService:
         if not answer or not evidence:
             return 0.0
 
+        # 1. Combine evidence to allow for multi-chunk synthesis without penalty
         evidence_text = "\n".join(
             [(item.get("excerpt", "") if isinstance(item, dict) else "") for item in evidence]
         )
-        lexical = self._compute_bleu_like(answer, evidence_text)
-        semantic = self._semantic_similarity_score(answer, evidence_text)
-        phrase = min(1.0, self._phrase_overlap_count(answer, evidence_text) / 3.0)
-        query_support = self._semantic_similarity_score(query, evidence_text) if query else 0.0
-        score = (0.35 * lexical) + (0.35 * semantic) + (0.15 * phrase) + (0.15 * query_support)
-        return round(min(1.0, score), 4)
+        normalized_evidence = self._normalize_text_for_match(evidence_text)
+        normalized_answer = self._normalize_text_for_match(answer)
+
+        # 2. Lexical Precision: What % of the LLM's generated words are in the context?
+        # Uses your existing BLEU logic which safely handles overall word counts.
+        lexical_score = self._compute_bleu_like(answer, evidence_text)
+        
+        # 3. Phrase Overlap: Did the LLM maintain specific domain phrases?
+        phrases = self._extract_query_phrases(answer)
+        if phrases:
+            phrase_hits = sum(1 for phrase in phrases if phrase in normalized_evidence)
+            phrase_score = phrase_hits / max(len(phrases), 1)
+        else:
+            phrase_score = 1.0
+
+        # 4. Strict Fact/Number Checking (Hallucination Detection)
+        # Finds standalone numbers (prices, days, percentages, clauses) in the answer
+        numbers = re.findall(r'\b\d+(?:\.\d+)?\b', normalized_answer)
+        number_penalty = 0.0
+        if numbers:
+            missing_numbers = sum(1 for num in numbers if num not in normalized_evidence)
+            # Subtract up to 40% if the LLM makes up numbers not found in the evidence
+            number_penalty = (missing_numbers / len(numbers)) * 0.40
+
+        # 5. Final Calculation
+        score = (0.75 * lexical_score) + (0.25 * phrase_score) - number_penalty
+        
+        # Ensure the score stays within the valid 0.0 to 1.0 range
+        return round(max(0.0, min(1.0, score)), 4)
